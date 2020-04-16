@@ -1,6 +1,6 @@
 from flask import Flask, make_response, request, session, render_template, send_file, Response
 from flask.views import MethodView
-from werkzeug.utils import secure_filename#
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import humanize
 import os
@@ -10,6 +10,11 @@ import json
 import mimetypes
 import sys
 from pathlib2 import Path
+
+from tornado import autoreload
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
 root = os.path.normpath("/tmp")
@@ -237,8 +242,14 @@ app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
 
 if __name__ == '__main__':
-    bind = os.getenv('FS_BIND', '0.0.0.0')
-    port = os.getenv('FS_PORT', '8000')
-    root = os.path.normpath(os.getenv('FS_PATH', '/tmp'))
+    # bind = os.getenv('FS_BIND', '0.0.0.0')
+    # port = os.getenv('FS_PORT', '8000')
+    root = os.path.normpath(os.getenv('FS_PATH', '/home/enteco/datawarehouse'))
+    # root = os.getcwd()
     key = os.getenv('FS_KEY')
-    app.run(bind, port, threaded=True, debug=False)
+    # app.run(bind, port, threaded=True, debug=False)
+
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.bind(5000)
+    http_server.start(4)
+    IOLoop.instance().start()
