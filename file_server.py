@@ -16,6 +16,8 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
+from flask_cors import CORS, cross_origin
+
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
 root = os.path.normpath("/tmp")
 key = ""
@@ -105,6 +107,7 @@ def get_range(request):
         return 0, None
 
 class PathView(MethodView):
+    @cross_origin()
     def get(self, p=''):
         hide_dotfile = request.args.get('hide-dotfile', request.cookies.get('hide-dotfile', 'no'))
 
