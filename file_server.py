@@ -18,7 +18,11 @@ from tornado.ioloop import IOLoop
 
 from flask_cors import CORS, cross_origin
 
+from flask_restful import Resource
+from flask_restful import Api
+
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
+api = Api(app)
 root = os.path.normpath("/tmp")
 key = ""
 
@@ -240,9 +244,43 @@ class PathView(MethodView):
             res.headers.add('Content-type', 'application/json')
         return res
 
+
+
+
 path_view = PathView.as_view('path_view')
 app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
+
+ficheros = {
+
+    "api": "1.0",
+    "count": 2,
+    "per_page": 3,
+    "files": [
+        {
+            "name": "Configuracion_Entorno_Produccion.docx",
+            "Modified": "2020-03-18T04:38:31",
+            "path": "http://192.168.10.42/repodocumental/Configuracion_Entorno_Produccion.docx",
+            
+        },
+        {
+            "name": "Puesta_en_marcha_de_servidor_de_produccion_para_Framework_Enteco.docx",
+            "Modified": "2020-03-18T04:38:31",
+            "path": "http://192.168.10.42/repodocumental/Configuracion_Entorno_Produccion.docx",
+            
+        }
+    ]
+
+}
+
+class FilesApi(Resource):
+    def get(self):
+        return Response(ficheros, mimetype="application/json", status=200)
+
+def initialize_routes(api):
+    api.add_resourse(FilesApi, '/api/ficheros')
+
+initialize_routes(api)
 
 if __name__ == '__main__':
     # bind = os.getenv('FS_BIND', '0.0.0.0')
