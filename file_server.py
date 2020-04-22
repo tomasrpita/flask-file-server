@@ -15,14 +15,18 @@ from tornado import autoreload
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
+from tornado.log import enable_pretty_logging
 
 from flask_cors import CORS, cross_origin
 
 from flask_restful import Resource
 from flask_restful import Api
-from flask import jsonify
 
+import math
+
+enable_pretty_logging()
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
+app.config['API_LIST_ITEMS_PAGE'] = 5
 api = Api(app)
 root = os.path.normpath("/tmp")
 key = ""
@@ -252,43 +256,57 @@ path_view = PathView.as_view('path_view')
 app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
 
-ficheros = {
 
-    "api": "1.0",
-    "count": 2,
-    "per_page": 3,
-    "files": [
-        {
-            "name": "Configuracion_Entorno_Produccion.docx",
-            "Modified": "2020-03-18T04:38:31",
-            "path": "http://192.168.10.42/repodocumental/Configuracion_Entorno_Produccion.docx",
-            
-        },
-        {
-            "name": "Puesta_en_marcha_de_servidor_de_produccion_para_Framework_Enteco.docx",
-            "Modified": "2020-03-18T04:38:31",
-            "path": "http://192.168.10.42/repodocumental/Configuracion_Entorno_Produccion.docx",
-            
-        }
-    ]
+def get_paginated_object(file_list, page, limit):
+    count = len(file_list)
 
-}
+    obj = {}
+    obj['curret_page'] = page
+    obj['max'] = limit
+    obj['count'] = count
+
+    if page == 1:
+        obj['prev_url'] = None
+    else:
+        obj['prev_url'] = page - 1
+
+    obj['pages'] =  math.ceil(count / limit)
+
+    if page >= obj['pages']:
+        obj['next_url'] = None
+    else:
+        obj['next_url'] = page + 1
+
+    if count <= max:
+        obj['recordset'] = file_list
+    elif (page == obj['pages']):
+        first_index_page = (page - 1 ) * limit
+        obj['recordset'] = file_list[first_index_page:]
+    elif (page < obj['pages']):
+        last_index_page = page * limit
+        first_index_page = (page - 1 ) * limit
+        obj['recordset'] = file_list[first_index_page:last_index_page]
+    else:
+        # maneja el error 
+        pass
+    
+    return obj
 
 class FilesApi(Resource):
-    def get(self):
+    def get(self, page=1):
 
+        per_page = app.config['API_LIST_ITEMS_PAGE']
         path = os.path.join(root, 'repodocumental')
 
         if os.path.isdir(path):
             files = []
-            total = {'size': 0, 'dir': 0, 'file': 0}
-
             for filename in os.listdir(path):
                 if filename in ignored:
                     continue
                 file = {}
                 file['filename'] = filename
                 file['filepath'] = os.path.join(path, filename)
+                file['url'] = "http://192.168.10.42/repodocumental/" + filename
                 stat_res = os.stat(file['filepath'])
                 file['mtime'] = stat_res.st_mtime
                 ft = get_type(stat_res.st_mode)
@@ -297,13 +315,25 @@ class FilesApi(Resource):
                 file['size'] = sz
                 files.append(file)
 
-        return jsonify({
-            "api": "1.0",
-            "count": len(files),
-            "current_page": 1,
-            "per_page": "All",
-            "files": files
-        })
+        return get_paginated_object(files, page, per_page)
+        
+        # count = len(files)
+        # if count <= per_page:
+        #     return {
+        #         "api": "1.0",
+        #         "count": len(files),
+        #         "current_page": 1,
+        #         "max": per_page,
+        #         "iter_pages": [1],
+        #         "recorset": files,
+        #         "next_url": None,
+        #         "prev_url": None,
+        #         "pages": 1
+        #     }
+        # else:
+        #     get_paginated_list(files, page)
+
+    
 
 def initialize_routes(api):
     api.add_resource(FilesApi, '/api/ficheros')
