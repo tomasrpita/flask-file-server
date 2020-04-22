@@ -20,6 +20,7 @@ from flask_cors import CORS, cross_origin
 
 from flask_restful import Resource
 from flask_restful import Api
+from flask import jsonify
 
 app = Flask(__name__, static_url_path='/assets', static_folder='assets')
 api = Api(app)
@@ -275,10 +276,10 @@ ficheros = {
 
 class FilesApi(Resource):
     def get(self):
-        return Response(ficheros, mimetype="application/json", status=200)
+        return jsonify(ficheros)
 
 def initialize_routes(api):
-    api.add_resourse(FilesApi, '/api/ficheros')
+    api.add_resource(FilesApi, '/api/ficheros')
 
 initialize_routes(api)
 
