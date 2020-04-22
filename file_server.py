@@ -277,7 +277,7 @@ def get_paginated_object(file_list, page, limit):
     else:
         obj['next_url'] = page + 1
 
-    if count <= max:
+    if count <= limit:
         obj['recordset'] = file_list
     elif (page == obj['pages']):
         first_index_page = (page - 1 ) * limit
@@ -293,8 +293,9 @@ def get_paginated_object(file_list, page, limit):
     return obj
 
 class FilesApi(Resource):
-    def get(self, page=1):
+    def get(self):
 
+        page = request.args.get('page', 1, int)
         per_page = app.config['API_LIST_ITEMS_PAGE']
         path = os.path.join(root, 'repodocumental')
 
