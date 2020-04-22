@@ -276,7 +276,34 @@ ficheros = {
 
 class FilesApi(Resource):
     def get(self):
-        return jsonify(ficheros)
+
+        path = os.path.join(root, 'repodocumental')
+
+        if os.path.isdir(path):
+            files = []
+            total = {'size': 0, 'dir': 0, 'file': 0}
+
+            for filename in os.listdir(path):
+                if filename in ignored:
+                    continue
+                file = {}
+                file['filename'] = filename
+                file['filepath'] = os.path.join(path, filename)
+                stat_res = os.stat(file['filepath'])
+                file['mtime'] = stat_res.st_mtime
+                ft = get_type(stat_res.st_mode)
+                file['type'] = ft
+                sz = stat_res.st_size
+                file['size'] = sz
+                files.append(file)
+
+        return jsonify({
+            "api": "1.0",
+            "count": len(files),
+            "current_page": 1,
+            "per_page": "All",
+            "files": files
+        })
 
 def initialize_routes(api):
     api.add_resource(FilesApi, '/api/ficheros')
