@@ -258,9 +258,14 @@ app.add_url_rule('/<path:p>', view_func=path_view)
 
 
 def get_paginated_object(file_list, page, limit):
+    
     count = len(file_list)
 
     obj = {}
+
+    obj['pages'] = math.ceil(count / limit)
+    page = 1 if page <= 0 else page if page <= obj['pages'] else obj['pages']
+    
     obj['curret_page'] = page
     obj['max'] = limit
     obj['count'] = count
@@ -270,7 +275,7 @@ def get_paginated_object(file_list, page, limit):
     else:
         obj['prev_url'] = page - 1
 
-    obj['pages'] =  math.ceil(count / limit)
+    
 
     if page >= obj['pages']:
         obj['next_url'] = None
@@ -293,9 +298,12 @@ def get_paginated_object(file_list, page, limit):
     return obj
 
 class FilesApi(Resource):
+
+
     def get(self):
 
         page = request.args.get('page', 1, int)
+        
         per_page = app.config['API_LIST_ITEMS_PAGE']
         path = os.path.join(root, 'repodocumental')
 
@@ -317,24 +325,8 @@ class FilesApi(Resource):
                 files.append(file)
 
         return get_paginated_object(files, page, per_page)
-        
-        # count = len(files)
-        # if count <= per_page:
-        #     return {
-        #         "api": "1.0",
-        #         "count": len(files),
-        #         "current_page": 1,
-        #         "max": per_page,
-        #         "iter_pages": [1],
-        #         "recorset": files,
-        #         "next_url": None,
-        #         "prev_url": None,
-        #         "pages": 1
-        #     }
-        # else:
-        #     get_paginated_list(files, page)
-
-    
+       
+   
 
 def initialize_routes(api):
     api.add_resource(FilesApi, '/api/ficheros')
