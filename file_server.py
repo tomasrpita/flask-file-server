@@ -256,6 +256,15 @@ path_view = PathView.as_view('path_view')
 app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
 
+def iter_pages(current_page, total_pages, left_edge=2, left_current=2, right_current=5, right_edge=2):
+    last = 0
+    for num in range(1, total_pages + 1):
+        if num <= left_edge or (num > current_page - left_current - 1 and num < current_page + right_current) or num > total_pages - right_edge:
+            if last + 1 != num:
+                yield None
+            yield num
+            last = num
+
 
 def get_paginated_object(file_list, page, limit):
     
@@ -295,8 +304,10 @@ def get_paginated_object(file_list, page, limit):
         # maneja el error 
         pass
     
-    return obj
+    obj['iter_pages'] = [x for x in iter_pages(page, obj['pages'])]
 
+    return obj
+    
 class FilesApi(Resource):
 
 
