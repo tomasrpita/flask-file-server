@@ -1,4 +1,12 @@
-from flask import Flask, make_response, request, session, render_template, send_file, Response
+from flask import (
+    Flask,
+    make_response,
+    request,
+    session,
+    render_template,
+    send_file,
+    Response,
+)
 from flask.views import MethodView
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -25,53 +33,96 @@ from flask_restful import Api
 import math
 
 enable_pretty_logging()
-app = Flask(__name__, static_url_path='/assets', static_folder='assets')
-app.config['API_LIST_ITEMS_PAGE'] = 5
+app = Flask(__name__, static_url_path="/assets", static_folder="assets")
+app.config["API_LIST_ITEMS_PAGE"] = 5
 api = Api(app)
 root = os.path.normpath("/tmp")
 key = ""
 
-ignored = ['.bzr', '$RECYCLE.BIN', '.DAV', '.DS_Store', '.git', '.hg', '.htaccess', '.htpasswd', '.Spotlight-V100', '.svn', '__MACOSX', 'ehthumbs.db', 'robots.txt', 'Thumbs.db', 'thumbs.tps']
-datatypes = {'audio': 'm4a,mp3,oga,ogg,webma,wav', 'archive': '7z,zip,rar,gz,tar', 'image': 'gif,ico,jpe,jpeg,jpg,png,svg,webp', 'pdf': 'pdf', 'quicktime': '3g2,3gp,3gp2,3gpp,mov,qt', 'source': 'atom,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml,plist', 'text': 'txt', 'video': 'mp4,m4v,ogv,webm', 'website': 'htm,html,mhtm,mhtml,xhtm,xhtml'}
-icontypes = {'fa-music': 'm4a,mp3,oga,ogg,webma,wav', 'fa-archive': '7z,zip,rar,gz,tar', 'fa-picture-o': 'gif,ico,jpe,jpeg,jpg,png,svg,webp', 'fa-file-text': 'pdf', 'fa-film': '3g2,3gp,3gp2,3gpp,mov,qt', 'fa-code': 'atom,plist,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml', 'fa-file-text-o': 'txt', 'fa-film': 'mp4,m4v,ogv,webm', 'fa-globe': 'htm,html,mhtm,mhtml,xhtm,xhtml'}
+ignored = [
+    ".bzr",
+    "$RECYCLE.BIN",
+    ".DAV",
+    ".DS_Store",
+    ".git",
+    ".hg",
+    ".htaccess",
+    ".htpasswd",
+    ".Spotlight-V100",
+    ".svn",
+    "__MACOSX",
+    "ehthumbs.db",
+    "robots.txt",
+    "Thumbs.db",
+    "thumbs.tps",
+]
+datatypes = {
+    "audio": "m4a,mp3,oga,ogg,webma,wav",
+    "archive": "7z,zip,rar,gz,tar",
+    "image": "gif,ico,jpe,jpeg,jpg,png,svg,webp",
+    "pdf": "pdf",
+    "quicktime": "3g2,3gp,3gp2,3gpp,mov,qt",
+    "source": "atom,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml,plist",
+    "text": "txt",
+    "video": "mp4,m4v,ogv,webm",
+    "website": "htm,html,mhtm,mhtml,xhtm,xhtml",
+}
+icontypes = {
+    "fa-music": "m4a,mp3,oga,ogg,webma,wav",
+    "fa-archive": "7z,zip,rar,gz,tar",
+    "fa-picture-o": "gif,ico,jpe,jpeg,jpg,png,svg,webp",
+    "fa-file-text": "pdf",
+    "fa-film": "3g2,3gp,3gp2,3gpp,mov,qt",
+    "fa-code": "atom,plist,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml",
+    "fa-file-text-o": "txt",
+    "fa-film": "mp4,m4v,ogv,webm",
+    "fa-globe": "htm,html,mhtm,mhtml,xhtm,xhtml",
+}
 
-@app.template_filter('size_fmt')
+
+@app.template_filter("size_fmt")
 def size_fmt(size):
     return humanize.naturalsize(size)
 
-@app.template_filter('time_fmt')
+
+@app.template_filter("time_fmt")
 def time_desc(timestamp):
     mdate = datetime.fromtimestamp(timestamp)
-    str = mdate.strftime('%Y-%m-%d %H:%M:%S')
+    str = mdate.strftime("%Y-%m-%d %H:%M:%S")
     return str
 
-@app.template_filter('data_fmt')
+
+@app.template_filter("data_fmt")
 def data_fmt(filename):
-    t = 'unknown'
+    t = "unknown"
     for type, exts in datatypes.items():
-        if filename.split('.')[-1] in exts:
+        if filename.split(".")[-1] in exts:
             t = type
     return t
 
-@app.template_filter('icon_fmt')
+
+@app.template_filter("icon_fmt")
 def icon_fmt(filename):
-    i = 'fa-file-o'
+    i = "fa-file-o"
     for icon, exts in icontypes.items():
-        if filename.split('.')[-1] in exts:
+        if filename.split(".")[-1] in exts:
             i = icon
     return i
 
-@app.template_filter('humanize')
+
+@app.template_filter("humanize")
 def time_humanize(timestamp):
     mdate = datetime.utcfromtimestamp(timestamp)
     return humanize.naturaltime(mdate)
 
+
 def get_type(mode):
     if stat.S_ISDIR(mode) or stat.S_ISLNK(mode):
-        type = 'dir'
+        type = "dir"
     else:
-        type = 'file'
+        type = "file"
     return type
+
 
 def partial_response(path, start, end=None):
     file_size = os.path.getsize(path)
@@ -81,33 +132,27 @@ def partial_response(path, start, end=None):
     end = min(end, file_size - 1)
     length = end - start + 1
 
-    with open(path, 'rb') as fd:
+    with open(path, "rb") as fd:
         fd.seek(start)
         bytes = fd.read(length)
     assert len(bytes) == length
 
     response = Response(
-        bytes,
-        206,
-        mimetype=mimetypes.guess_type(path)[0],
-        direct_passthrough=True,
+        bytes, 206, mimetype=mimetypes.guess_type(path)[0], direct_passthrough=True,
     )
     response.headers.add(
-        'Content-Range', 'bytes {0}-{1}/{2}'.format(
-            start, end, file_size,
-        ),
+        "Content-Range", "bytes {0}-{1}/{2}".format(start, end, file_size,),
     )
-    response.headers.add(
-        'Accept-Ranges', 'bytes'
-    )
+    response.headers.add("Accept-Ranges", "bytes")
     return response
 
+
 def get_range(request):
-    range = request.headers.get('Range')
-    m = re.match('bytes=(?P<start>\d+)-(?P<end>\d+)?', range)
+    range = request.headers.get("Range")
+    m = re.match("bytes=(?P<start>\d+)-(?P<end>\d+)?", range)
     if m:
-        start = m.group('start')
-        end = m.group('end')
+        start = m.group("start")
+        end = m.group("end")
         start = int(start)
         if end is not None:
             end = int(end)
@@ -115,49 +160,58 @@ def get_range(request):
     else:
         return 0, None
 
+
 class PathView(MethodView):
     @cross_origin()
-    def get(self, p=''):
-        hide_dotfile = request.args.get('hide-dotfile', request.cookies.get('hide-dotfile', 'no'))
+    def get(self, p=""):
+        hide_dotfile = request.args.get(
+            "hide-dotfile", request.cookies.get("hide-dotfile", "no")
+        )
 
         path = os.path.join(root, p)
 
         if os.path.isdir(path):
             contents = []
-            total = {'size': 0, 'dir': 0, 'file': 0}
+            total = {"size": 0, "dir": 0, "file": 0}
             for filename in os.listdir(path):
                 if filename in ignored:
                     continue
-                if hide_dotfile == 'yes' and filename[0] == '.':
+                if hide_dotfile == "yes" and filename[0] == ".":
                     continue
                 filepath = os.path.join(path, filename)
                 stat_res = os.stat(filepath)
                 info = {}
-                info['name'] = filename
-                info['mtime'] = stat_res.st_mtime
+                info["name"] = filename
+                info["mtime"] = stat_res.st_mtime
                 ft = get_type(stat_res.st_mode)
-                info['type'] = ft
+                info["type"] = ft
                 total[ft] += 1
                 sz = stat_res.st_size
-                info['size'] = sz
-                total['size'] += sz
+                info["size"] = sz
+                total["size"] += sz
                 contents.append(info)
-            page = render_template('index.html', path=p, contents=contents, total=total, hide_dotfile=hide_dotfile)
+            page = render_template(
+                "index.html",
+                path=p,
+                contents=contents,
+                total=total,
+                hide_dotfile=hide_dotfile,
+            )
             res = make_response(page, 200)
-            res.set_cookie('hide-dotfile', hide_dotfile, max_age=16070400)
+            res.set_cookie("hide-dotfile", hide_dotfile, max_age=16070400)
         elif os.path.isfile(path):
-            if 'Range' in request.headers:
+            if "Range" in request.headers:
                 start, end = get_range(request)
                 res = partial_response(path, start, end)
             else:
                 res = send_file(path)
-                res.headers.add('Content-Disposition', 'attachment')
+                res.headers.add("Content-Disposition", "attachment")
         else:
-            res = make_response('Not found', 404)
+            res = make_response("Not found", 404)
         return res
-    
-    def put(self, p=''):
-        if request.cookies.get('auth_cookie') == key:
+
+    def put(self, p=""):
+        if request.cookies.get("auth_cookie") == key:
             path = os.path.join(root, p)
             dir_path = os.path.dirname(path)
             Path(dir_path).mkdir(parents=True, exist_ok=True)
@@ -166,60 +220,60 @@ class PathView(MethodView):
             if os.path.isdir(dir_path):
                 try:
                     filename = secure_filename(os.path.basename(path))
-                    with open(os.path.join(dir_path, filename), 'wb') as f:
+                    with open(os.path.join(dir_path, filename), "wb") as f:
                         f.write(request.stream.read())
                 except Exception as e:
-                    info['status'] = 'error'
-                    info['msg'] = str(e)
+                    info["status"] = "error"
+                    info["msg"] = str(e)
                 else:
-                    info['status'] = 'success'
-                    info['msg'] = 'File Saved'
+                    info["status"] = "success"
+                    info["msg"] = "File Saved"
             else:
-                info['status'] = 'error'
-                info['msg'] = 'Invalid Operation'
+                info["status"] = "error"
+                info["msg"] = "Invalid Operation"
             res = make_response(json.JSONEncoder().encode(info), 201)
-            res.headers.add('Content-type', 'application/json')
+            res.headers.add("Content-type", "application/json")
         else:
-            info = {} 
-            info['status'] = 'error'
-            info['msg'] = 'Authentication failed'
+            info = {}
+            info["status"] = "error"
+            info["msg"] = "Authentication failed"
             res = make_response(json.JSONEncoder().encode(info), 401)
-            res.headers.add('Content-type', 'application/json')
+            res.headers.add("Content-type", "application/json")
         return res
 
-    def post(self, p=''):
-        if request.cookies.get('auth_cookie') == key:
+    def post(self, p=""):
+        if request.cookies.get("auth_cookie") == key:
             path = os.path.join(root, p)
             Path(path).mkdir(parents=True, exist_ok=True)
 
             info = {}
             if os.path.isdir(path):
-                files = request.files.getlist('files[]')
+                files = request.files.getlist("files[]")
                 for file in files:
                     try:
                         filename = secure_filename(file.filename)
                         file.save(os.path.join(path, filename))
                     except Exception as e:
-                        info['status'] = 'error'
-                        info['msg'] = str(e)
+                        info["status"] = "error"
+                        info["msg"] = str(e)
                     else:
-                        info['status'] = 'success'
-                        info['msg'] = 'File Saved'
+                        info["status"] = "success"
+                        info["msg"] = "File Saved"
             else:
-                info['status'] = 'error'
-                info['msg'] = 'Invalid Operation'
+                info["status"] = "error"
+                info["msg"] = "Invalid Operation"
             res = make_response(json.JSONEncoder().encode(info), 200)
-            res.headers.add('Content-type', 'application/json')
+            res.headers.add("Content-type", "application/json")
         else:
-            info = {} 
-            info['status'] = 'error'
-            info['msg'] = 'Authentication failed'
+            info = {}
+            info["status"] = "error"
+            info["msg"] = "Authentication failed"
             res = make_response(json.JSONEncoder().encode(info), 401)
-            res.headers.add('Content-type', 'application/json')
+            res.headers.add("Content-type", "application/json")
         return res
-    
-    def delete(self, p=''):
-        if request.cookies.get('auth_cookie') == key:
+
+    def delete(self, p=""):
+        if request.cookies.get("auth_cookie") == key:
             path = os.path.join(root, p)
             dir_path = os.path.dirname(path)
             Path(dir_path).mkdir(parents=True, exist_ok=True)
@@ -231,35 +285,48 @@ class PathView(MethodView):
                     os.remove(os.path.join(dir_path, filename))
                     os.rmdir(dir_path)
                 except Exception as e:
-                    info['status'] = 'error'
-                    info['msg'] = str(e)
+                    info["status"] = "error"
+                    info["msg"] = str(e)
                 else:
-                    info['status'] = 'success'
-                    info['msg'] = 'File Deleted'
+                    info["status"] = "success"
+                    info["msg"] = "File Deleted"
             else:
-                info['status'] = 'error'
-                info['msg'] = 'Invalid Operation'
+                info["status"] = "error"
+                info["msg"] = "Invalid Operation"
             res = make_response(json.JSONEncoder().encode(info), 204)
-            res.headers.add('Content-type', 'application/json')
+            res.headers.add("Content-type", "application/json")
         else:
             info = {}
-            info['status'] = 'error'
-            info['msg'] = 'Authentication failed'
+            info["status"] = "error"
+            info["msg"] = "Authentication failed"
             res = make_response(json.JSONEncoder().encode(info), 401)
-            res.headers.add('Content-type', 'application/json')
+            res.headers.add("Content-type", "application/json")
         return res
 
 
+path_view = PathView.as_view("path_view")
+app.add_url_rule("/", view_func=path_view)
+app.add_url_rule("/<path:p>", view_func=path_view)
 
 
-path_view = PathView.as_view('path_view')
-app.add_url_rule('/', view_func=path_view)
-app.add_url_rule('/<path:p>', view_func=path_view)
-
-def iter_pages(current_page, total_pages, left_edge=2, left_current=2, right_current=5, right_edge=2):
+def iter_pages(
+    current_page,
+    total_pages,
+    left_edge=2,
+    left_current=2,
+    right_current=5,
+    right_edge=2,
+):
     last = 0
     for num in range(1, total_pages + 1):
-        if num <= left_edge or (num > current_page - left_current - 1 and num < current_page + right_current) or num > total_pages - right_edge:
+        if (
+            num <= left_edge
+            or (
+                num > current_page - left_current - 1
+                and num < current_page + right_current
+            )
+            or num > total_pages - right_edge
+        ):
             if last + 1 != num:
                 yield None
             yield num
@@ -267,56 +334,54 @@ def iter_pages(current_page, total_pages, left_edge=2, left_current=2, right_cur
 
 
 def get_paginated_object(file_list, page, limit):
-    
+
     count = len(file_list)
 
     obj = {}
 
-    obj['pages'] = math.ceil(count / limit)
-    page = 1 if page <= 0 else page if page <= obj['pages'] else obj['pages']
-    
-    obj['curret_page'] = page
-    obj['max'] = limit
-    obj['count'] = count
+    obj["pages"] = math.ceil(count / limit)
+    page = 1 if page <= 0 else page if page <= obj["pages"] else obj["pages"]
+
+    obj["curret_page"] = page
+    obj["max"] = limit
+    obj["count"] = count
 
     if page == 1:
-        obj['prev_url'] = None
+        obj["prev_url"] = None
     else:
-        obj['prev_url'] = page - 1
+        obj["prev_url"] = page - 1
 
-    
-
-    if page >= obj['pages']:
-        obj['next_url'] = None
+    if page >= obj["pages"]:
+        obj["next_url"] = None
     else:
-        obj['next_url'] = page + 1
+        obj["next_url"] = page + 1
 
     if count <= limit:
-        obj['recordset'] = file_list
-    elif (page == obj['pages']):
-        first_index_page = (page - 1 ) * limit
-        obj['recordset'] = file_list[first_index_page:]
-    elif (page < obj['pages']):
+        obj["recordset"] = file_list
+    elif page == obj["pages"]:
+        first_index_page = (page - 1) * limit
+        obj["recordset"] = file_list[first_index_page:]
+    elif page < obj["pages"]:
         last_index_page = page * limit
-        first_index_page = (page - 1 ) * limit
-        obj['recordset'] = file_list[first_index_page:last_index_page]
+        first_index_page = (page - 1) * limit
+        obj["recordset"] = file_list[first_index_page:last_index_page]
     else:
-        # maneja el error 
+        # maneja el error
         pass
-    
-    obj['iter_pages'] = [x for x in iter_pages(page, obj['pages'])]
+
+    obj["iter_pages"] = [x for x in iter_pages(page, obj["pages"])]
 
     return obj
-    
+
+
 class FilesApi(Resource):
-
-
+    @cross_origin()
     def get(self):
 
-        page = request.args.get('page', 1, int)
-        
-        per_page = app.config['API_LIST_ITEMS_PAGE']
-        path = os.path.join(root, 'repodocumental')
+        page = request.args.get("page", 1, int)
+
+        per_page = app.config["API_LIST_ITEMS_PAGE"]
+        path = os.path.join(root, "repodocumental")
 
         if os.path.isdir(path):
             files = []
@@ -324,32 +389,32 @@ class FilesApi(Resource):
                 if filename in ignored:
                     continue
                 file = {}
-                file['filename'] = filename
-                file['filepath'] = os.path.join(path, filename)
-                file['url'] = "http://192.168.10.42/repodocumental/" + filename
-                stat_res = os.stat(file['filepath'])
-                file['mtime'] = stat_res.st_mtime
+                file["filename"] = filename
+                file["filepath"] = os.path.join(path, filename)
+                file["url"] = "http://192.168.10.42/repodocumental/" + filename
+                stat_res = os.stat(file["filepath"])
+                file["mtime"] = stat_res.st_mtime
                 ft = get_type(stat_res.st_mode)
-                file['type'] = ft
+                file["type"] = ft
                 sz = stat_res.st_size
-                file['size'] = sz
+                file["size"] = sz
                 files.append(file)
 
         return get_paginated_object(files, page, per_page)
-       
-   
+
 
 def initialize_routes(api):
-    api.add_resource(FilesApi, '/api/ficheros')
+    api.add_resource(FilesApi, "/api/ficheros")
+
 
 initialize_routes(api)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # bind = os.getenv('FS_BIND', '0.0.0.0')
     # port = os.getenv('FS_PORT', '8000')
-    root = os.path.normpath(os.getenv('FS_PATH', '/home/enteco/datawarehouse'))
+    root = os.path.normpath(os.getenv("FS_PATH", "/home/enteco/datawarehouse"))
     # root = os.getcwd()
-    key = os.getenv('FS_KEY')
+    key = os.getenv("FS_KEY")
     # app.run(bind, port, threaded=True, debug=False)
 
     http_server = HTTPServer(WSGIContainer(app))
